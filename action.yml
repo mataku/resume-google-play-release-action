@@ -1,23 +1,37 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: Resume Google Play Release
+description:
+  Resume a halted Google Play Console release for a specific track and version
+author: mataku
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: play-circle
+  color: green
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  package-name:
+    description:
+      The package name of the Android application (e.g., com.example.app)
     required: true
-    default: '1000'
-
-# Define your outputs here.
-outputs:
-  time:
-    description: Your output description here
+  version-name:
+    description: The version name to resume (e.g., 1.0.0)
+    required: true
+  google-account-json-file-path:
+    description:
+      Path to the Google Cloud account JSON file for authentication (service
+      account or external account)
+    required: false
+  google-account-json:
+    description:
+      Google Cloud account JSON content for authentication (service account or
+      external account). Either this or google-account-json-file-path must be
+      provided.
+    required: false
+  track:
+    description: The release track to resume (production, beta, alpha, internal)
+    required: true
+    default: 'production'
 
 runs:
   using: node24
