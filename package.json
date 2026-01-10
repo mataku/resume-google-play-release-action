@@ -1,7 +1,7 @@
 {
   "name": "resume-google-play-release-action",
   "description": "GitHub Action to resume halted Google Play Console releases",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "mataku",
   "type": "module",
   "private": true,
