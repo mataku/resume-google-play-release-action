@@ -42,10 +42,30 @@ Or by using Service Account:
 
 ## Usage
 
-### Using Workload Identity Federation with File Path
+### Using Workload Identity Federation (Recommended)
 
 Use `google-github-actions/auth` to authenticate with Workload Identity
-Federation and pass the generated credentials file:
+Federation. The action will automatically use the
+`GOOGLE_APPLICATION_CREDENTIALS` environment variable set by the auth action:
+
+```yaml
+steps:
+  - name: Authenticate to Google Cloud
+    uses: google-github-actions/auth@v3
+    with:
+      create_credentials_file: true
+      workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+      service_account: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+
+  - name: Resume Google Play Release
+    uses: mataku/resume-google-play-release-action@v1
+    with:
+      package-name: 'com.example.app'
+      version-name: '1.0.0'
+      track: 'production'
+```
+
+Alternatively, you can explicitly pass the credentials file path:
 
 ```yaml
 steps:
@@ -84,22 +104,30 @@ steps:
 
 ### Inputs
 
-| Input                           | Description                                                                                         | Required                          | Default      |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------- | ------------ |
-| `package-name`                  | The package name of the Android application (e.g., `com.example.app`)                               | Yes                               | -            |
-| `version-name`                  | The version name to resume (e.g., `1.0.0`)                                                          | Yes                               | -            |
-| `google-account-json-file-path` | Path to the Google Cloud account JSON file for authentication (service account or external account) | No (if `google-account-json` set) | -            |
-| `google-account-json`           | Google Cloud account JSON content for authentication (service account or external account)          | No (if file path set)             | -            |
-| `track`                         | The release track to resume (`production`, `beta`, `alpha`, `internal`)                             | Yes                               | `production` |
+| Input                           | Description                                                                                         | Required                               | Default      |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------ |
+| `package-name`                  | The package name of the Android application (e.g., `com.example.app`)                               | Yes                                    | -            |
+| `version-name`                  | The version name to resume (e.g., `1.0.0`)                                                          | Yes                                    | -            |
+| `google-account-json-file-path` | Path to the Google Cloud account JSON file for authentication (service account or external account) | No (if other auth method is available) | -            |
+| `google-account-json`           | Google Cloud account JSON content for authentication (service account or external account)          | No (if other auth method is available) | -            |
+| `track`                         | The release track to resume (`production`, `beta`, `alpha`, `internal`)                             | Yes                                    | `production` |
 
-**Note**: Either `google-account-json-file-path` or `google-account-json` must
-be provided. If both are provided, `google-account-json` takes priority.
+**Note**: The action supports three authentication methods with the following
+priority:
+
+1. `GOOGLE_APPLICATION_CREDENTIALS` environment variable (automatically set by
+   `google-github-actions/auth`)
+2. `google-account-json` input parameter
+3. `google-account-json-file-path` input parameter
+
+At least one authentication method must be provided.
 
 ## Error Handling
 
 The action will fail if:
 
-- Neither `google-account-json-file-path` nor `google-account-json` is provided
+- No authentication method is provided (`GOOGLE_APPLICATION_CREDENTIALS`,
+  `google-account-json-file-path`, or `google-account-json`)
 - The specified version name is not found in the track
 - Authentication fails
 - The Google account doesn't have sufficient permissions

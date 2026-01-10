@@ -52228,14 +52228,18 @@ async function run() {
         coreExports.info(`Package name: ${packageName}`);
         coreExports.info(`Version name: ${versionName}`);
         coreExports.info(`Track: ${track}`);
-        // Validate that at least one authentication method is provided
-        if (!googleAccountJsonFilePath && !googleAccountJson) {
-            throw new Error('Either google-account-json-file-path or google-account-json must be provided');
+        const googleApplicationCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        if (!googleApplicationCredentials &&
+            !googleAccountJsonFilePath &&
+            !googleAccountJson) {
+            throw new Error('Either google-account-json-file-path or google-account-json must be provided. You can also use GOOGLE_APPLICATION_CREDENTIALS environment variable (e.g., set by google-github-actions/auth).');
         }
-        // Read or parse Google account credentials
         let credentials;
-        if (googleAccountJson) {
-            // Prioritize google-account-json if both are provided
+        if (googleApplicationCredentials) {
+            coreExports.info(`Using GOOGLE_APPLICATION_CREDENTIALS for authentication: ${googleApplicationCredentials}`);
+            credentials = JSON.parse(readFileSync(googleApplicationCredentials, 'utf-8'));
+        }
+        else if (googleAccountJson) {
             coreExports.info('Using google-account-json for authentication');
             credentials = JSON.parse(googleAccountJson);
         }
