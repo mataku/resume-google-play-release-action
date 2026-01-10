@@ -42,10 +42,9 @@ const { run } = await import('../src/main.js')
 
 describe('main.ts', () => {
   beforeEach(() => {
-    // Reset all mocks
     jest.clearAllMocks()
+    delete process.env.GOOGLE_APPLICATION_CREDENTIALS
 
-    // Set up default mock implementations
     core.getInput.mockImplementation((name: string) => {
       const inputs: Record<string, string> = {
         'package-name': 'com.example.app',
@@ -269,10 +268,56 @@ describe('main.ts', () => {
 
     await run()
 
-    // Verify that the action failed
     expect(core.setFailed).toHaveBeenCalledWith(
-      'Either google-account-json-file-path or google-account-json must be provided'
+      'Either google-account-json-file-path or google-account-json must be provided. You can also use GOOGLE_APPLICATION_CREDENTIALS environment variable (e.g., set by google-github-actions/auth).'
     )
+  })
+
+  it('Successfully uses GOOGLE_APPLICATION_CREDENTIALS when set', async () => {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = '/path/to/credentials.json'
+    core.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'package-name': 'com.example.app',
+        'version-name': '1.0.0',
+        'google-account-json-file-path': '',
+        'google-account-json': '',
+        track: 'production'
+      }
+      return inputs[name] || ''
+    })
+
+    await run()
+
+    expect(mockReadFileSync).toHaveBeenCalledWith(
+      '/path/to/credentials.json',
+      'utf-8'
+    )
+    expect(mockEdits.commit).toHaveBeenCalled()
+  })
+
+  it('Prioritizes GOOGLE_APPLICATION_CREDENTIALS over other methods', async () => {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = '/path/to/env-credentials.json'
+    core.getInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'package-name': 'com.example.app',
+        'version-name': '1.0.0',
+        'google-account-json-file-path': '/path/to/input-credentials.json',
+        'google-account-json': JSON.stringify({
+          type: 'service_account',
+          project_id: 'test-project'
+        }),
+        track: 'production'
+      }
+      return inputs[name] || ''
+    })
+
+    await run()
+
+    expect(mockReadFileSync).toHaveBeenCalledWith(
+      '/path/to/env-credentials.json',
+      'utf-8'
+    )
+    expect(mockEdits.commit).toHaveBeenCalled()
   })
 
   it('Handles multiple releases in track correctly', async () => {
